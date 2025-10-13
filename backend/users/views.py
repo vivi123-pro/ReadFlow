@@ -2,9 +2,9 @@ from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import login
-from .models import User
-from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserSerializer
+from .models import User, UserProfile
+from .serializers import (UserRegistrationSerializer, UserLoginSerializer, 
+                         UserSerializer, UserProfileSerializer)
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
@@ -46,3 +46,14 @@ def login_view(request):
 def profile(request):
     serializer = UserSerializer(request.user)
     return Response(serializer.data)
+
+@api_view(['PUT'])
+def update_profile(request):
+    profile = request.user.profile
+    serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+    
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

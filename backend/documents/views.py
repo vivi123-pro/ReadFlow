@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Document, ContentChunk
 from .serializers import DocumentSerializer, ContentChunkSerializer, DocumentUploadSerializer
-from services.pdf_processor import PDFProcessor
+from .pdf_processor import PDFProcessor
 
 class DocumentViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentSerializer
@@ -13,23 +13,24 @@ class DocumentViewSet(viewsets.ModelViewSet):
         return Document.objects.filter(user=self.request.user)
     
     def create(self, request, *args, **kwargs):
-        # Use the upload serializer for validation
         upload_serializer = DocumentUploadSerializer(data=request.data)
         
         if upload_serializer.is_valid():
             file = upload_serializer.validated_data['file']
             title = upload_serializer.validated_data.get('title') or file.name
+            reading_mode = upload_serializer.validated_data.get('reading_mode', 'direct')
             
-            # Create the document with all required fields
+            # Create the document with reading mode
             document = Document.objects.create(
                 user=request.user,
                 title=title,
                 original_filename=file.name,
                 file=file,
-                file_size=file.size
+                file_size=file.size,
+                reading_mode=reading_mode
             )
             
-            # Process the PDF
+            # Process the PDF based on selected mode
             try:
                 processor = PDFProcessor(document.id)
                 processor.process_document()
@@ -37,19 +38,14 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 document.status = Document.FAILED
                 document.save()
                 return Response(
-                    {'error': 'Failed to process PDF'}, 
+                    {'error': f'Failed to process PDF: {str(e)}'}, 
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             
-            # Return the document using the main serializer
             serializer = self.get_serializer(document)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         return Response(upload_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def perform_create(self, serializer):
-        # Remove this method since we're overriding create()
-        pass
     
     @action(detail=True, methods=['get'])
     def chunks(self, request, pk=None):
@@ -57,73 +53,42 @@ class DocumentViewSet(viewsets.ModelViewSet):
         chunks = document.chunks.all()
         serializer = ContentChunkSerializer(chunks, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def reprocess(self, request, pk=None):
+        """Reprocess document with different reading mode"""
+        document = self.get_object()
+        new_mode = request.data.get('reading_mode', 'direct')
+        
+        if new_mode not in [choice[0] for choice in Document.READING_MODE_CHOICES]:
+            return Response(
+                {'error': 'Invalid reading mode'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Delete existing chunks
+        document.chunks.all().delete()
+        
+        # Update reading mode and reprocess
+        document.reading_mode = new_mode
+        document.status = Document.PROCESSING
+        document.save()
+        
+        try:
+            processor = PDFProcessor(document.id)
+            processor.process_document()
+            serializer = self.get_serializer(document)
+            return Response(serializer.data)
+        except Exception as e:
+            document.status = Document.FAILED
+            document.save()
+            return Response(
+                {'error': f'Failed to reprocess PDF: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class ContentChunkViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ContentChunkSerializer
     
     def get_queryset(self):
-        return ContentChunk.objects.filter(
-            document__user=self.request.user
-        )
-        
-        
-    
-from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from .models import Document
-
-@login_required
-def library_view(request):
-    documents = Document.objects.filter(user=request.user)
-    return render(request, 'library.html', {
-        'documents': documents
-    })
-
-@login_required
-def upload_view(request):
-    return render(request, 'upload.html')
-
-@login_required
-def read_view(request, document_id):
-    document = get_object_or_404(Document, id=document_id, user=request.user)
-    chunks = document.chunks.all().order_by('chunk_index')
-    
-    # Mock user interests (you'll implement this properly later)
-    user_interests = ['Technology', 'Business']  # This will come from user profile
-    
-    total_reading_time = sum(chunk.reading_time for chunk in chunks)
-    
-    return render(request, 'reading/read_document.html', {
-        'document': document,
-        'chunks': chunks,
-        'user_interests': user_interests,
-        'total_reading_time': total_reading_time // 60
-    })
-
-# API Test Views
-def test_dashboard(request):
-    """Main test dashboard with links to all test pages"""
-    return render(request, 'test/dashboard.html')
-
-def test_register(request):
-    """Test page for user registration API"""
-    return render(request, 'test/register.html')
-
-def test_login(request):
-    """Test page for user login API"""
-    return render(request, 'test/login.html')
-
-@login_required
-def test_profile(request):
-    """Test page for user profile API"""
-    return render(request, 'test/profile.html')
-
-@login_required
-def test_documents(request):
-    """Test page for documents API (CRUD operations)"""
-    return render(request, 'test/documents.html')
-
-@login_required
-def test_chunks(request):
-    """Test page for chunks API"""
-    return render(request, 'test/chunks.html')
+        return ContentChunk.objects.filter(document__user=self.request.user)
