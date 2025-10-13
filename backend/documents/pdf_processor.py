@@ -1,4 +1,7 @@
+import pdfplumber
+
 from .ai_processor import AIStoryTransformer
+from models import Document, ContentChunk
 
 class PDFProcessor:
     def __init__(self, document_id):
