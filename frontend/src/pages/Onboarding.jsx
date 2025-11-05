@@ -1,11 +1,14 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import InterestCard from '../components/InterestCard';
 import { FiCode, FiTrendingUp, FiGlobe, FiHeart, FiMusic, FiCamera } from 'react-icons/fi';
 
 const Onboarding = () => {
+  const navigate = useNavigate();
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [step, setStep] = useState(1);
+  const [selectedTone, setSelectedTone] = useState(null);
 
   const interests = [
     { id: 'technology', title: 'Technology', icon: FiCode },
@@ -93,7 +96,12 @@ const Onboarding = () => {
                 {tones.map(tone => (
                   <button
                     key={tone.id}
-                    className="w-full text-left p-8 rounded-2xl border-2 border-border hover:border-accent1/50 hover:bg-accent1/5 transition-all bg-white/50 backdrop-blur-sm"
+                    onClick={() => setSelectedTone(tone.id)}
+                    className={`w-full text-left p-8 rounded-2xl border-2 transition-all bg-white/50 backdrop-blur-sm ${
+                      selectedTone === tone.id
+                        ? 'border-accent1 bg-accent1/10'
+                        : 'border-border hover:border-accent1/50 hover:bg-accent1/5'
+                    }`}
                   >
                     <h3 className="font-serif text-xl md:text-2xl text-text mb-3">{tone.title}</h3>
                     <p className="text-text/70 text-lg leading-relaxed">{tone.description}</p>
@@ -101,7 +109,11 @@ const Onboarding = () => {
                 ))}
               </div>
 
-              <button className="bg-gradient-to-r from-accent1 to-accent2 text-text px-12 py-4 rounded-xl hover:shadow-lg transition-all font-medium text-lg">
+              <button
+                onClick={() => navigate('/library')}
+                disabled={!selectedTone}
+                className="bg-gradient-to-r from-accent1 to-accent2 text-text px-12 py-4 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg"
+              >
                 Start Reading
               </button>
             </div>

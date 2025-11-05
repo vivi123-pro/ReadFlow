@@ -1,8 +1,12 @@
 import Header from '../components/Header';
 import DocumentCard from '../components/DocumentCard';
-import { FiSearch, FiPlus, FiFilter } from 'react-icons/fi';
+import UploadArea from '../components/UploadArea';
+import { FiSearch, FiPlus, FiFilter, FiUpload, FiX } from 'react-icons/fi';
+import { useState } from 'react';
 
 const Library = () => {
+  const [showUploadModal, setShowUploadModal] = useState(false);
+
   const documents = [
     {
       id: 1,
@@ -50,7 +54,10 @@ const Library = () => {
             <p className="text-text/70 text-lg">Your personalized collection of transformed documents</p>
           </div>
 
-          <button className="bg-gradient-to-r from-accent1 to-accent2 text-text px-6 py-3 rounded-xl hover:shadow-lg transition-all flex items-center space-x-2">
+          <button
+            onClick={() => setShowUploadModal(true)}
+            className="bg-gradient-to-r from-accent1 to-accent2 text-text px-6 py-3 rounded-xl hover:shadow-lg transition-all flex items-center space-x-2"
+          >
             <FiPlus className="text-lg" />
             <span>Add Document</span>
           </button>
@@ -111,6 +118,38 @@ const Library = () => {
           </div>
         </div>
       </main>
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-accent1 to-accent2 rounded-xl flex items-center justify-center">
+                    <FiUpload className="text-white text-xl" />
+                  </div>
+                  <h2 className="font-serif text-2xl text-text">Add New Document</h2>
+                </div>
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  className="text-text/50 hover:text-text transition-colors"
+                >
+                  <FiX className="text-2xl" />
+                </button>
+              </div>
+
+              <UploadArea />
+
+              <div className="mt-6 text-center">
+                <p className="text-text/70 text-sm">
+                  Supported formats: PDF, DOC, DOCX, TXT (Max 50MB)
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
