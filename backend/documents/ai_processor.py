@@ -1,142 +1,168 @@
-from transformers import pipeline, set_seed
-import nltk
+from google import genai
+from django.conf import settings
 import re
+from datetime import datetime, timedelta
 
 class AIStoryTransformer:
     def __init__(self):
-        print("🚀 Loading AI story generator...")
-        # Try DialoGPT-medium which is better for conversational/story content
-        self.story_generator = pipeline(
-            "text-generation", 
-            model="microsoft/DialoGPT-medium",
-            device=-1
-        )
-        print("✅ AI story generator ready!")
-        
-        try:
-            nltk.data.find('tokenizers/punkt')
-        except LookupError:
-            nltk.download('punkt')
+        print("🚀 Initializing Google Gemini AI...")
+        # The configuration method remains the same
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        # The model initialization remains the same
+        self.model = genai.GenerativeModel('gemini-2.5-flash') # Recommended update to a current model
+        print("✅ Gemini AI ready!")
     
     def transform_to_story(self, text, user_interests, reading_level='casual'):
-        """Transform plain text into engaging story based on user interests"""
+        """Transform plain text into engaging story using Gemini"""
         cleaned_text = self.clean_text(text)
-        narrative_prompt = self.create_conversational_prompt(cleaned_text, user_interests, reading_level)
-        story_content = self.generate_conversational_content(narrative_prompt)
+        prompt = self.create_story_prompt(cleaned_text, user_interests, reading_level)
+        story_content = self.generate_with_gemini(prompt)
         return story_content
+    
+    def add_contextual_enhancements(self, text, user_interests, reading_level='casual'):
+        """Add contextual explanations and real-world examples"""
+        prompt = self.create_enhancement_prompt(text, user_interests, reading_level)
+        enhanced_content = self.generate_with_gemini(prompt)
+        return enhanced_content
+    
+    def highlight_connections(self, text, user_interests):
+        """Highlight connections to user's interests"""
+        prompt = self.create_connection_prompt(text, user_interests)
+        connections = self.generate_with_gemini(prompt)
+        return connections
     
     def clean_text(self, text):
         """Clean and prepare text for AI processing"""
         text = re.sub(r'\s+', ' ', text.strip())
-        
-        if len(text) > 350:
-            sentences = nltk.tokenize.sent_tokenize(text)
-            shortened = []
-            total_length = 0
-            
-            for sentence in sentences:
-                if total_length + len(sentence) < 350:
-                    shortened.append(sentence)
-                    total_length += len(sentence)
-                else:
-                    break
-            
-            text = ' '.join(shortened)
-            if shortened:
-                text += "..."
-        
+        if len(text) > 1000:
+            text = text[:1000] + "..."
         return text
     
-    def create_conversational_prompt(self, text, interests, reading_level):
-        """Create prompts that work better with DialoGPT"""
+    def create_story_prompt(self, text, interests, reading_level):
+        """Create engaging prompts for Gemini"""
         primary_interest = interests[0] if interests else 'general'
         
-        # Conversational prompts that work better with DialoGPT
-        interest_prompts = {
-            'technology': f"Tell me an interesting story about technology innovation: {text}",
-            'business': f"Share an inspiring business success story: {text}", 
-            'fiction': f"Create a fictional story based on this: {text}",
-            'science': f"Tell me about a scientific discovery: {text}",
-            'history': f"Share a historical story: {text}",
-            'biography': f"Tell me a personal success story: {text}",
-            'general': f"Tell me an interesting story: {text}"
+        prompt = f"""Transform the following text into an engaging, narrative story format suitable for {reading_level} reading level with focus on {primary_interest}. 
+        
+Make it:
+- Conversational and engaging
+- Easy to understand
+- Maintain the core information
+- Add context and storytelling elements
+- Keep it concise (200-300 words)
+        
+Original text: {text}
+        
+Transformed story:"""
+        
+        return prompt
+    
+    def create_enhancement_prompt(self, text, interests, reading_level):
+        """Create prompt for contextual enhancements"""
+        interests_str = ', '.join(interests[:3]) if interests else 'general'
+        
+        prompt = f"""Add contextual explanations and real-world examples to this text based on interests in {interests_str}. 
+        
+For {reading_level} level:
+- Add relevant examples from {interests_str}
+- Explain complex concepts simply
+- Connect to practical applications
+- Highlight why this matters to someone interested in {interests_str}
+        
+Text: {text}
+        
+Enhanced version:"""
+        
+        return prompt
+    
+    def create_connection_prompt(self, text, interests):
+        """Create prompt for highlighting connections"""
+        interests_str = ', '.join(interests) if interests else 'general topics'
+        
+        prompt = f"""Identify and highlight connections between this text and {interests_str}. 
+        
+Provide:
+- 2-3 key connections to {interests_str}
+- Why someone interested in {interests_str} should care
+- Related concepts they might want to explore
+        
+Text: {text}
+        
+Connections:"""
+        
+        return prompt
+    
+    def generate_with_gemini(self, prompt):
+        """Generate content using Gemini API"""
+        try:
+            # The generate_content call remains the same
+            response = self.model.generate_content(prompt)
+            story_content = response.text.strip()
+            return story_content if story_content else self.create_fallback()
+        except Exception as e:
+            print(f"🤖 Gemini generation failed: {e}")
+            return self.create_fallback()
+    
+    def create_fallback(self):
+        """Simple fallback when AI fails"""
+        return "This content is being processed for an enhanced reading experience. The original information has been preserved and will be presented in an engaging format."
+    
+    def generate_recommendations(self, user_interests, reading_history):
+        """Generate content recommendations based on interests and history"""
+        prompt = f"""Based on interests in {', '.join(user_interests)} and reading history, suggest 3 types of content this user might enjoy:
+        
+- Specific topics to explore
+- Document types that would interest them
+- Learning paths to follow
+        
+Recommendations:"""
+        
+        return self.generate_with_gemini(prompt)
+    
+    def generate_summary(self, text, max_length=150):
+        """Generate concise summary of the text"""
+        prompt = f"""Create a concise summary of this text in {max_length} words or less:
+        
+{text}
+        
+Summary:"""
+        
+        return self.generate_with_gemini(prompt)
+    
+    def extract_key_points(self, text, num_points=5):
+        """Extract key points from the text"""
+        prompt = f"""Extract the {num_points} most important key points from this text:
+        
+{text}
+        
+Key Points:"""
+        
+        return self.generate_with_gemini(prompt)
+    
+    def adjust_reading_level(self, text, target_level='casual'):
+        """Adjust text complexity to match reading level"""
+        level_descriptions = {
+            'beginner': 'very simple language, short sentences, basic vocabulary',
+            'casual': 'conversational tone, moderate complexity, accessible language',
+            'advanced': 'sophisticated vocabulary, complex concepts, detailed explanations'
         }
         
-        base_prompt = interest_prompts.get(primary_interest, interest_prompts['general'])
+        description = level_descriptions.get(target_level, level_descriptions['casual'])
         
-        return base_prompt
+        prompt = f"""Rewrite this text using {description}:
+        
+{text}
+        
+Rewritten text:"""
+        
+        return self.generate_with_gemini(prompt)
     
-    def generate_conversational_content(self, prompt):
-        """Generate content using DialoGPT with better parameters"""
-        try:
-            set_seed(42)
-            
-            generated = self.story_generator(
-                prompt,
-                max_length=300,
-                min_length=100,
-                temperature=0.9,  # Higher temperature for more creativity
-                do_sample=True,
-                num_return_sequences=1,
-                pad_token_id=50256,
-                repetition_penalty=1.2,
-                no_repeat_ngram_size=2
-            )[0]['generated_text']
-            
-            # Extract content after the prompt
-            story_content = generated[len(prompt):].strip()
-            
-            # Enhanced cleaning for DialoGPT output
-            story_content = self.clean_dialogue_output(story_content)
-            
-            return story_content if story_content and len(story_content) > 80 else self.create_smart_fallback(prompt)
-            
-        except Exception as e:
-            print(f"🤖 AI generation failed: {e}")
-            return self.create_smart_fallback(prompt)
-    
-    def clean_dialogue_output(self, text):
-        """Clean DialoGPT-specific output patterns"""
-        # Remove common dialogue markers if they appear
-        text = re.sub(r'^(User|Bot|Human|AI):\s*', '', text, flags=re.IGNORECASE)
-        text = re.sub(r'\b(Learn more|Click here|Follow|Sign up|Subscribe)\b.*$', '', text, flags=re.IGNORECASE)
-        text = re.sub(r'www\..*?(?=\s|$)', '', text)
-        text = re.sub(r'http\S+', '', text)
-        text = re.sub(r'@\w+', '', text)  # Remove Twitter handles
+    def generate_questions(self, text, num_questions=3):
+        """Generate thought-provoking questions about the content"""
+        prompt = f"""Generate {num_questions} thought-provoking questions that would help someone better understand and engage with this content:
         
-        # Normalize and clean
-        text = re.sub(r'\s+', ' ', text.strip())
+{text}
         
-        # Ensure proper ending
-        if text and not text[-1] in '.!?"\'':
-            text += '.'
+Questions:"""
         
-        return text
-    
-    def create_smart_fallback(self, prompt):
-        """Create intelligent fallback content"""
-        # Extract the core content using multiple methods
-        content_match = re.search(r':\s*(.*?)$', prompt)
-        if not content_match:
-            content_match = re.search(r'story(?:.*?):\s*(.*?)$', prompt)
-        
-        if content_match:
-            original_text = content_match.group(1).strip()
-            
-            # Create context-aware fallbacks
-            if 'technology' in prompt.lower():
-                return f"""In the world of technological advancement, {original_text} represents a significant milestone. This breakthrough demonstrates how innovation can transform industries and create new possibilities. The team behind this achievement combined technical expertise with strategic vision to create something truly remarkable. As technology continues to evolve, developments like this pave the way for future innovations that will shape our digital landscape for years to come."""
-            
-            elif 'business' in prompt.lower():
-                return f"""In the competitive business world, {original_text} stands as a testament to strategic execution and market understanding. This success story highlights the importance of innovation, timing, and customer focus in today's dynamic business environment. The achievement reflects careful planning and the ability to adapt to changing market conditions while maintaining a clear vision for growth and impact."""
-            
-            elif 'science' in prompt.lower():
-                return f"""In scientific research, {original_text} represents an important discovery with far-reaching implications. This breakthrough came through dedicated research, collaboration, and persistent effort to solve complex challenges. The findings contribute valuable knowledge to the scientific community and open new avenues for future exploration and application in addressing real-world problems."""
-            
-            elif 'history' in prompt.lower():
-                return f"""Throughout history, {original_text} marked a pivotal moment in human development. This historical achievement demonstrates human ingenuity and the capacity for innovation across generations. Understanding these historical developments helps us appreciate the foundations of modern society and the continuous thread of progress that connects past achievements with present possibilities."""
-            
-            else:
-                return f"""This story about {original_text} represents an important achievement worth celebrating. The details reveal a journey of dedication, innovation, and strategic thinking that led to meaningful outcomes. Such accomplishments often combine multiple factors including timing, expertise, and the ability to see opportunities where others see challenges."""
-        
-        return """Our storytelling AI is currently preparing an engaging narrative based on your content. The final story will provide context, meaning, and an engaging perspective that makes the information more accessible and memorable. Please check back shortly for the transformed content."""
+        return self.generate_with_gemini(prompt)

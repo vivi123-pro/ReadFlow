@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     
     'users',
     'documents',
+    'analytics',
     'core',
     
     'django.contrib.admin',
@@ -67,7 +68,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR, 'templates'],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -162,3 +163,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_USER_MODEL = 'users.User'
+
+# Google Generative AI Configuration
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')

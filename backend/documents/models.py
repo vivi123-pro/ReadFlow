@@ -1,5 +1,6 @@
 from django.db import models
 from users.models import User
+from django.utils import timezone
 
 class Document(models.Model):
     UPLOADED = 'uploaded'
@@ -62,3 +63,49 @@ class ContentChunk(models.Model):
     
     def __str__(self):
         return f"Chunk {self.chunk_index} - {self.document.title}"
+
+class ReadingSession(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    current_chunk = models.IntegerField(default=0)
+    progress_percentage = models.FloatField(default=0.0)
+    reading_speed_wpm = models.IntegerField(default=200)
+    time_spent = models.IntegerField(default=0)  # seconds
+    last_read_at = models.DateTimeField(auto_now=True)
+    device_info = models.JSONField(default=dict, blank=True)
+    
+    class Meta:
+        unique_together = ['user', 'document']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.document.title} ({self.progress_percentage:.1f}%)"
+
+class Bookmark(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    chunk = models.ForeignKey(ContentChunk, on_delete=models.CASCADE)
+    note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['user', 'document', 'chunk']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.document.title} - Chunk {self.chunk.chunk_index}"
+
+class ReadingAnalytics(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    total_time_spent = models.IntegerField(default=0)
+    completion_rate = models.FloatField(default=0.0)
+    avg_reading_speed = models.IntegerField(default=200)
+    preferred_reading_times = models.JSONField(default=list)  # hours of day
+    engagement_score = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['user', 'document']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.document.title} Analytics"

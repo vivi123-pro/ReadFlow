@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Document, ContentChunk
+from .models import Document, ContentChunk, ReadingSession, Bookmark, ReadingAnalytics
 
 class ContentChunkSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,3 +32,29 @@ class DocumentUploadSerializer(serializers.Serializer):
     def validate_reading_mode(self, value):
         # You can add validation logic here if needed
         return value
+
+class ReadingSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReadingSession
+        fields = '__all__'
+        read_only_fields = ('user',)
+
+class BookmarkSerializer(serializers.ModelSerializer):
+    chunk_content = serializers.CharField(source='chunk.content', read_only=True)
+    
+    class Meta:
+        model = Bookmark
+        fields = '__all__'
+        read_only_fields = ('user',)
+
+class ReadingAnalyticsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReadingAnalytics
+        fields = '__all__'
+        read_only_fields = ('user',)
+
+class ProgressUpdateSerializer(serializers.Serializer):
+    current_chunk = serializers.IntegerField(min_value=0)
+    time_spent = serializers.IntegerField(min_value=0)
+    reading_speed_wpm = serializers.IntegerField(min_value=50, max_value=1000, required=False)
+    device_info = serializers.JSONField(required=False)
