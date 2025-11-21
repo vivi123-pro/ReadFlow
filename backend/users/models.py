@@ -5,6 +5,17 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     storage_used = models.BigIntegerField(default=0)
     max_storage = models.BigIntegerField(default=100*1024*1024)
+
+    # Remove USERNAME_FIELD override or handle it properly
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']  # Add username here
+    
+    # Fix: Add username field explicitly if needed
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'
+    )
     
     # Override with custom related_name
     groups = models.ManyToManyField(
@@ -23,7 +34,7 @@ class User(AbstractUser):
     )
     
     def __str__(self):
-        return self.username
+        return self.email  # Return email instead of username
 
 class UserProfile(models.Model):
     INTEREST_CHOICES = [

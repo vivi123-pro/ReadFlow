@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import InterestCard from '../components/InterestCard';
 import { FiCode, FiTrendingUp, FiGlobe, FiHeart, FiMusic, FiCamera } from 'react-icons/fi';
+import { authAPI } from '../services/api';
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -110,11 +111,15 @@ const Onboarding = () => {
               </div>
 
               <button
-                onClick={() => navigate('/library')}
-                disabled={!selectedTone}
-                className="bg-gradient-to-r from-accent1 to-accent2 text-text px-12 py-4 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg"
+                onClick={handleComplete}
+                disabled={!selectedTone || isLoading}
+                className="bg-gradient-to-r from-accent1 to-accent2 text-text px-12 py-4 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg flex items-center justify-center"
               >
-                Start Reading
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-text/30 border-t-text rounded-full animate-spin"></div>
+                ) : (
+                  'Start Reading'
+                )}
               </button>
             </div>
           )}

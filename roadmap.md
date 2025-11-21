@@ -1,6 +1,6 @@
-# 📋 ReadFlow Comprehensive Roadmap
+# 📋 Narrate Comprehensive Roadmap
 
-This roadmap outlines the timeline for completing ReadFlow, including features, implementation, and optimization of the app. All progress will be documented here.
+This roadmap outlines the timeline for completing Narrate, including features, implementation, and optimization of the app. All progress will be documented here.
 
 ---
 

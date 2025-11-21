@@ -2,45 +2,31 @@ import Header from '../components/Header';
 import DocumentCard from '../components/DocumentCard';
 import UploadArea from '../components/UploadArea';
 import { FiSearch, FiPlus, FiFilter, FiUpload, FiX } from 'react-icons/fi';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { documentsAPI } from '../services/api';
 
 const Library = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const documents = [
-    {
-      id: 1,
-      title: "The Future of Machine Learning in Healthcare",
-      progress: 75,
-      mode: 'story',
-      interest: 'Technology',
-      lastRead: '2 hours ago'
-    },
-    {
-      id: 2,
-      title: "Quarterly Business Analysis Report Q3 2024",
-      progress: 30,
-      mode: 'direct',
-      interest: 'Business',
-      lastRead: '1 day ago'
-    },
-    {
-      id: 3,
-      title: "Climate Change and Sustainable Development",
-      progress: 100,
-      mode: 'story',
-      interest: 'Science',
-      lastRead: '3 days ago'
-    },
-    {
-      id: 4,
-      title: "Digital Transformation in Education",
-      progress: 45,
-      mode: 'hybrid',
-      interest: 'Technology',
-      lastRead: '1 week ago'
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  const fetchDocuments = async () => {
+    try {
+      setLoading(true);
+      const response = await documentsAPI.getDocuments();
+      setDocuments(response.data);
+    } catch (err) {
+      setError('Failed to load documents');
+      console.error('Error fetching documents:', err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   return (
     <div className="min-h-screen w-screen flex flex-col bg-background">

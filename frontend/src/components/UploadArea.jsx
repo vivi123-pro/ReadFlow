@@ -60,32 +60,46 @@ const UploadArea = () => {
     setSelectedMode(null);
   };
 
-  const handleModeSelect = (mode) => {
+  const handleModeSelect = async (mode) => {
     setSelectedMode(mode);
-    simulateUpload(mode);
+    await handleUpload(mode);
   };
 
-  const simulateUpload = (mode) => {
+  const handleUpload = async (mode) => {
     if (!selectedFile) return;
 
     setIsUploading(true);
     setUploadProgress(0);
 
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          setUploadComplete(true);
-          // Navigate to reading interface after a short delay
-          setTimeout(() => {
-            navigate('/read', { state: { mode, fileName: selectedFile.name } });
-          }, 1500);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('reading_mode', mode);
+
+      const response = await documentsAPI.uploadDocument(formData);
+
+      // Simulate progress for better UX
+      const interval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(interval);
+            setIsUploading(false);
+            setUploadComplete(true);
+            // Navigate to reading interface after a short delay
+            setTimeout(() => {
+              navigate(`/read/${response.data.id}`);
+            }, 1500);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+    } catch (error) {
+      setError('Failed to upload document. Please try again.');
+      setIsUploading(false);
+      console.error('Upload error:', error);
+    }
   };
 
   if (selectedFile && !uploadComplete) {

@@ -1,10 +1,10 @@
-# 📖 ReadFlow
+# 📖 Narrate
 
 **Transform PDF documents into beautiful, story-like reading experiences**
 
-![ReadFlow Banner](https://via.placeholder.com/1200x400/6366f1/ffffff?text=ReadFlow+-+PDF+to+Story+Reader)
+![Narrate Banner](https://via.placeholder.com/1200x400/6366f1/ffffff?text=Narrate+-+PDF+to+Story+Reader)
 
-ReadFlow converts traditional PDF documents into immersive, mobile-friendly reading experiences inspired by modern reading apps. Upload any PDF and enjoy it as a seamless, vertical-scrolling story with smart content chunking and customizable reading settings.
+Narrate converts traditional PDF documents into immersive, mobile-friendly reading experiences inspired by modern reading apps. Upload any PDF and enjoy it as a seamless, vertical-scrolling story with smart content chunking and customizable reading settings.
 
 ## ✨ Features
 
@@ -40,5 +40,5 @@ ReadFlow converts traditional PDF documents into immersive, mobile-friendly read
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/readflow.git
-cd readflow
+git clone https://github.com/yourusername/Narrate.git
+cd Narrate

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 import Header from '../components/Header';
+import { authAPI } from '../services/api';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -52,17 +53,34 @@ const Login = () => {
     }
 
     try {
-      // TODO: Replace with actual API call
-      console.log('Login attempt:', formData);
+      const response = await authAPI.login({
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { access, refresh, user } = response.data;
 
-      // For demo purposes, accept any email/password combination
-      // In real app, this would be an API call to your backend
-      navigate('/onboarding');
+      localStorage.setItem('access_token', access);
+      localStorage.setItem('refresh_token', refresh);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      navigate('/library');
     } catch (error) {
-      setErrors({ general: 'Login failed. Please try again.' });
+      const backendErrors = error.response?.data;
+      if (backendErrors && typeof backendErrors === 'object') {
+        // Map backend field errors to form errors
+        const fieldErrors = {};
+        Object.keys(backendErrors).forEach(key => {
+          if (Array.isArray(backendErrors[key])) {
+            fieldErrors[key] = backendErrors[key][0]; // Take the first error message
+          } else {
+            fieldErrors[key] = backendErrors[key];
+          }
+        });
+        setErrors(fieldErrors);
+      } else {
+        setErrors({ general: error.response?.data?.detail || 'Login failed. Please try again.' });
+      }
     } finally {
       setIsLoading(false);
     }

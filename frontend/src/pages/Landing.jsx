@@ -114,7 +114,7 @@ const Landing = () => {
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-serif font-light text-text mb-6">
-                Why Choose ReadFlow?
+                Why Choose Narrate?
               </h2>
               <p className="text-xl text-text/70 max-w-2xl mx-auto">
                 Experience the future of document reading with our innovative AI-powered platform

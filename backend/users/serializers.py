@@ -2,97 +2,56 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import User, UserProfile
 
-class UserProfileSerializer(serializers.ModelSerializer):
-    interests_display = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = UserProfile
-        fields = ('interests', 'interests_display', 'preferred_reading_mode', 'reading_level')
-    
-    def get_interests_display(self, obj):
-        return obj.get_interests_display()
-
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=6)
-    interests = serializers.ListField(
-        child=serializers.ChoiceField(choices=UserProfile.INTEREST_CHOICES),
-        required=True,
-        write_only=True
-    )
-    preferred_reading_mode = serializers.ChoiceField(
-        choices=UserProfile.READING_MODE_CHOICES,
-        default='direct',
-        required=False
-    )
-    reading_level = serializers.ChoiceField(
-        choices=UserProfile.READING_LEVEL_CHOICES, 
-        default='casual',
-        required=False
-    )
-    
+    password = serializers.CharField(write_only=True, min_length=8)
+    password_confirm = serializers.CharField(write_only=True)
+
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password', 'first_name', 'last_name', 
-                 'interests', 'preferred_reading_mode', 'reading_level')
-    
-    def validate_interests(self, value):
-        if len(value) < 1:
-            raise serializers.ValidationError("Please select at least one interest.")
-        if len(value) > 5:
-            raise serializers.ValidationError("Please select up to 5 interests.")
-        return value
-    
+        fields = ['username', 'email', 'first_name', 'last_name', 'password', 'password_confirm']
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError("Passwords do not match.")
+        
+        # Check if username is provided
+        if not attrs.get('username'):
+            raise serializers.ValidationError("Username is required.")
+            
+        return attrs
+
     def create(self, validated_data):
-        # Extract profile data
-        interests = validated_data.pop('interests')
-        preferred_reading_mode = validated_data.pop('preferred_reading_mode', 'direct')
-        reading_level = validated_data.pop('reading_level', 'casual')
-        
-        # Create user
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password'],
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', '')
-        )
-        
-        # Create user profile
-        UserProfile.objects.create(
-            user=user,
-            interests=interests,
-            preferred_reading_mode=preferred_reading_mode,
-            reading_level=reading_level
-        )
-        
+        validated_data.pop('password_confirm')
+        user = User.objects.create_user(**validated_data)
         return user
 
-class UserLoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
+class UserLoginSerializer(serializers.Serializer):  # Change to regular Serializer
+    email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
-    
-    def validate(self, data):
-        username = data.get('username')
-        password = data.get('password')
-        
-        if username and password:
-            user = authenticate(username=username, password=password)
-            if user:
-                if user.is_active:
-                    data['user'] = user
-                else:
-                    raise serializers.ValidationError('User account is disabled.')
-            else:
-                raise serializers.ValidationError('Unable to log in with provided credentials.')
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        if email and password:
+            # Authenticate using email
+            user = authenticate(username=email, password=password)
+            if not user:
+                raise serializers.ValidationError("Invalid email or password.")
+            if not user.is_active:
+                raise serializers.ValidationError("User account is disabled.")
+            attrs['user'] = user
         else:
-            raise serializers.ValidationError('Must include username and password.')
-        
-        return data
+            raise serializers.ValidationError("Must include email and password.")
+
+        return attrs
 
 class UserSerializer(serializers.ModelSerializer):
-    profile = UserProfileSerializer(read_only=True)
-    
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 
-                 'storage_used', 'max_storage', 'profile')
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = '__all__'

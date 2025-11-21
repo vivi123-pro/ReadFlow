@@ -1,68 +1,68 @@
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { FiArrowLeft, FiBookmark, FiShare2, FiPlay } from 'react-icons/fi';
+import { documentsAPI } from '../services/api';
 
 const BookSummary = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [document, setDocument] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data based on document ID
-  const bookData = {
-    1: {
-      title: "The Future of Machine Learning in Healthcare",
-      summary: `This comprehensive analysis explores how artificial intelligence is revolutionizing healthcare delivery. From diagnostic imaging to personalized treatment plans, machine learning algorithms are transforming patient outcomes and medical research.
+  useEffect(() => {
+    if (id) {
+      fetchDocument();
+    }
+  }, [id]);
 
-The document examines current applications of AI in medical imaging, predictive analytics for patient care, and the ethical considerations surrounding automated decision-making in healthcare settings. It presents case studies from leading medical institutions and discusses the future implications for healthcare professionals and patients alike.
-
-Key insights include the potential for early disease detection, optimized treatment protocols, and the integration of AI with existing healthcare infrastructure. The analysis concludes with recommendations for healthcare organizations looking to implement AI solutions responsibly.`,
-      author: "Dr. Sarah Chen",
-      published: "2024",
-      pages: 45,
-      mode: 'story',
-      interest: 'Technology'
-    },
-    2: {
-      title: "Quarterly Business Analysis Report Q3 2024",
-      summary: `This detailed quarterly report provides comprehensive insights into business performance metrics for Q3 2024. The analysis covers revenue trends, market positioning, competitive landscape, and strategic recommendations for the upcoming quarter.
-
-Key findings include strong growth in digital services, challenges in supply chain management, and emerging opportunities in sustainable business practices. The report includes detailed financial projections, risk assessments, and actionable strategies for maintaining competitive advantage.
-
-Executive summaries highlight the most critical data points, while detailed appendices provide supporting documentation and methodology. The report serves as a strategic planning tool for senior management and board members.`,
-      author: "Financial Analytics Team",
-      published: "Q3 2024",
-      pages: 67,
-      mode: 'direct',
-      interest: 'Business'
-    },
-    3: {
-      title: "Climate Change and Sustainable Development",
-      summary: `This comprehensive study examines the intersection of climate change mitigation and sustainable development goals. Through extensive research and data analysis, it explores how global warming affects economic development, social equity, and environmental health.
-
-The document presents scientific evidence of climate patterns, economic impacts of extreme weather events, and successful case studies of sustainable development initiatives worldwide. It discusses policy frameworks, technological innovations, and community-based solutions that are proving effective in addressing climate challenges.
-
-Particular attention is given to developing nations and vulnerable populations, with recommendations for international cooperation and local implementation strategies. The study concludes with a roadmap for achieving sustainable development while mitigating climate change impacts.`,
-      author: "Dr. Michael Rodriguez",
-      published: "2024",
-      pages: 89,
-      mode: 'story',
-      interest: 'Science'
-    },
-    4: {
-      title: "Digital Transformation in Education",
-      summary: `This forward-thinking analysis explores how digital technologies are reshaping educational systems worldwide. From online learning platforms to AI-powered tutoring systems, the document examines the transformative potential of technology in education.
-
-The study covers successful implementations of digital learning tools, challenges in equitable access, and the evolving role of educators in technology-enhanced classrooms. It includes case studies from pioneering educational institutions and discusses the skills students need to thrive in a digital economy.
-
-Key topics include personalized learning algorithms, virtual reality classrooms, and the integration of artificial intelligence in curriculum development. The analysis provides practical guidance for educational institutions navigating digital transformation.`,
-      author: "Prof. Lisa Thompson",
-      published: "2024",
-      pages: 52,
-      mode: 'hybrid',
-      interest: 'Technology'
+  const fetchDocument = async () => {
+    try {
+      setLoading(true);
+      const response = await documentsAPI.getDocument(id);
+      setDocument(response.data);
+    } catch (err) {
+      setError('Failed to load document');
+      console.error('Error fetching document:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const book = bookData[id];
+  if (loading) {
+    return (
+      <div className="min-h-screen w-screen flex flex-col bg-background">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-accent1/30 border-t-accent1 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-text/70">Loading document...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !document) {
+    return (
+      <div className="min-h-screen w-screen flex flex-col bg-background">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl text-text mb-4">Document not found</h1>
+            <p className="text-text/70 mb-4">{error}</p>
+            <button
+              onClick={() => navigate('/library')}
+              className="bg-accent1 text-text px-6 py-3 rounded-xl"
+            >
+              Back to Library
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!book) {
     return (

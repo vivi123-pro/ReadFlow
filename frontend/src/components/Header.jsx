@@ -18,7 +18,7 @@ const Header = ({ title }) => {
             <div className="w-8 h-8 bg-gradient-to-r from-accent1 to-accent2 rounded-lg flex items-center justify-center">
               <IoBookSharp className="text-white text-lg" />
             </div>
-            <h1 className="text-2xl font-serif font-light text-text">ReadFlow</h1>
+            <h1 className="text-2xl font-serif font-light text-text">Narrate</h1>
           </Link>
 
           <nav className="flex items-center space-x-6">

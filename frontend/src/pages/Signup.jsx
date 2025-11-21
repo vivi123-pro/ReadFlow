@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiCheck } from 'react-icons/fi';
 import Header from '../components/Header';
+import { authAPI } from '../services/api';
 
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -51,12 +52,12 @@ const Signup = () => {
     // Validation
     const newErrors = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
+    if (!formData.first_name.trim()) {
+      newErrors.first_name = 'First name is required';
     }
 
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
+    if (!formData.last_name.trim()) {
+      newErrors.last_name = 'Last name is required';
     }
 
     if (!formData.email) {
@@ -78,6 +79,12 @@ const Signup = () => {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setIsLoading(false);
+      return;
+    }
+
     if (!formData.agreeToTerms) {
       newErrors.agreeToTerms = 'You must agree to the terms and conditions';
     }
@@ -89,17 +96,36 @@ const Signup = () => {
     }
 
     try {
-      // TODO: Replace with actual API call
-      console.log('Signup attempt:', formData);
+      const response = await authAPI.register({
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { access, refresh, user } = response.data;
 
-      // For demo purposes, accept any valid form data
-      // In real app, this would be an API call to your backend
-      navigate('/onboarding');
+      localStorage.setItem('access_token', access);
+      localStorage.setItem('refresh_token', refresh);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      navigate('/library');
     } catch (error) {
-      setErrors({ general: 'Registration failed. Please try again.' });
+      const backendErrors = error.response?.data;
+      if (backendErrors && typeof backendErrors === 'object') {
+        // Map backend field errors to form errors
+        const fieldErrors = {};
+        Object.keys(backendErrors).forEach(key => {
+          if (Array.isArray(backendErrors[key])) {
+            fieldErrors[key] = backendErrors[key][0]; // Take the first error message
+          } else {
+            fieldErrors[key] = backendErrors[key];
+          }
+        });
+        setErrors(fieldErrors);
+      } else {
+        setErrors({ general: error.response?.data?.detail || 'Registration failed. Please try again.' });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +141,7 @@ const Signup = () => {
         <div className="w-full max-w-md">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="font-serif text-3xl md:text-4xl text-text mb-2">Join ReadFlow</h1>
+            <h1 className="font-serif text-3xl md:text-4xl text-text mb-2">Join Narrate</h1>
             <p className="text-text/70">Start your personalized reading journey</p>
           </div>
 
@@ -125,25 +151,25 @@ const Signup = () => {
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-text/70 mb-2">
+                  <label htmlFor="first_name" className="block text-sm font-medium text-text/70 mb-2">
                     First Name
                   </label>
                   <div className="relative">
                     <FiUser className="absolute left-4 top-1/2 transform -translate-y-1/2 text-accent1 text-sm" />
                     <input
                       type="text"
-                      id="firstName"
-                      name="firstName"
-                      value={formData.firstName}
+                      id="first_name"
+                      name="first_name"
+                      value={formData.first_name}
                       onChange={handleChange}
                       className={`w-full pl-10 pr-4 py-3 bg-background rounded-xl border focus:ring-2 focus:ring-accent1/20 transition-all outline-none text-sm ${
-                        errors.firstName ? 'border-red-300 focus:border-red-500' : 'border-border focus:border-accent1'
+                        errors.first_name ? 'border-red-300 focus:border-red-500' : 'border-border focus:border-accent1'
                       }`}
                       placeholder="John"
                     />
                   </div>
-                  {errors.firstName && (
-                    <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>
+                  {errors.first_name && (
+                    <p className="mt-1 text-xs text-red-600">{errors.first_name}</p>
                   )}
                 </div>
 
@@ -153,20 +179,20 @@ const Signup = () => {
                   </label>
                   <div className="relative">
                     <FiUser className="absolute left-4 top-1/2 transform -translate-y-1/2 text-accent1 text-sm" />
-                    <input
-                      type="text"
-                      id="lastName"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      className={`w-full pl-10 pr-4 py-3 bg-background rounded-xl border focus:ring-2 focus:ring-accent1/20 transition-all outline-none text-sm ${
-                        errors.lastName ? 'border-red-300 focus:border-red-500' : 'border-border focus:border-accent1'
-                      }`}
-                      placeholder="Doe"
-                    />
+                  <input
+                    type="text"
+                    id="last_name"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    className={`w-full pl-10 pr-4 py-3 bg-background rounded-xl border focus:ring-2 focus:ring-accent1/20 transition-all outline-none text-sm ${
+                      errors.last_name ? 'border-red-300 focus:border-red-500' : 'border-border focus:border-accent1'
+                    }`}
+                    placeholder="Doe"
+                  />
                   </div>
-                  {errors.lastName && (
-                    <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>
+                  {errors.last_name && (
+                    <p className="mt-1 text-xs text-red-600">{errors.last_name}</p>
                   )}
                 </div>
               </div>

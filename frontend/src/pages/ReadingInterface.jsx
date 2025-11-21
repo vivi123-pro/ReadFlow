@@ -1,23 +1,44 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import ModeToggle from '../components/ModeToggle';
 import { FiBookmark, FiShare2, FiSettings, FiArrowLeft, FiArrowRight } from 'react-icons/fi';
+import { documentsAPI } from '../services/api';
 
 const ReadingInterface = () => {
-  const location = useLocation();
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [mode, setMode] = useState('story');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [fileName, setFileName] = useState('Sample Document');
+  const [document, setDocument] = useState(null);
+  const [chunks, setChunks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentChunk, setCurrentChunk] = useState(0);
 
   useEffect(() => {
-    if (location.state?.mode) {
-      setMode(location.state.mode);
+    if (id) {
+      fetchDocument();
     }
-    if (location.state?.fileName) {
-      setFileName(location.state.fileName);
+  }, [id]);
+
+  const fetchDocument = async () => {
+    try {
+      setLoading(true);
+      const [docResponse, chunksResponse] = await Promise.all([
+        documentsAPI.getDocument(id),
+        documentsAPI.getChunks(id)
+      ]);
+      setDocument(docResponse.data);
+      setChunks(chunksResponse.data);
+      setMode(docResponse.data.reading_mode);
+    } catch (err) {
+      setError('Failed to load document');
+      console.error('Error fetching document:', err);
+    } finally {
+      setLoading(false);
     }
-  }, [location.state]);
+  };
 
   const sampleContent = {
     direct: `Artificial Intelligence has transformed how we process information. Machine learning algorithms can now analyze complex datasets and extract meaningful patterns that were previously inaccessible to human researchers.

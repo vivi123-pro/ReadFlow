@@ -15,7 +15,7 @@ const Footer = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-accent1 to-accent2 rounded-lg flex items-center justify-center">
                 <IoBookSharp className="text-white text-lg" />
               </div>
-              <h3 className="text-2xl font-serif font-light text-text">ReadFlow</h3>
+              <h3 className="text-2xl font-serif font-light text-text">Narrate</h3>
             </Link>
             <p className="text-text/70 text-sm leading-relaxed mb-4">
               Transform your reading experience with AI-powered document transformation.
@@ -44,7 +44,7 @@ const Footer = () => {
                 <FiGithub className="text-lg" />
               </a>
               <a
-                href="mailto:hello@readflow.com"
+                href="mailto:hello@Narrate.com"
                 className="text-text/50 hover:text-accent1 transition-colors"
                 aria-label="Email"
               >
@@ -161,7 +161,7 @@ const Footer = () => {
         <div className="border-t border-border pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="flex items-center space-x-2 text-text/60 text-sm">
-              <span>© {currentYear} ReadFlow. Made with</span>
+              <span>© {currentYear} Narrate. Made with</span>
               <FiHeart className="text-accent1" />
               <span>for readers everywhere.</span>
             </div>
